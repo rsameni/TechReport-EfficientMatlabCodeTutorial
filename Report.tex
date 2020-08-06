@@ -1,0 +1,733 @@
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\documentclass[10pt,a4paper]{article}
+%\twocolumn
+%//////////////////////////////////////////////////////////////////////
+\textwidth 18cm
+\textheight 23cm
+\topmargin -1.5cm
+\oddsidemargin 0cm
+\evensidemargin 0cm
+%//////////////////////////////////////////////////////////////////////
+
+
+%\hyphenpenalty=750
+%% If we didn't adjust the interword spacing, 2200 might be better.
+%% The TeX default is 1000
+%\hbadness=1350
+%\hyphenation
+
+%\usepackage[pdftex]{graphicx}
+\usepackage{amsmath}
+%\usepackage{array}
+\usepackage{color}
+\usepackage{url}
+%\usepackage{hyperref}
+
+\usepackage[final]{mcode} 
+
+%\usepackage{listings} 
+%\lstloadlanguages{MATLAB} 
+%\lstset{basicstyle=\footnotesize\ttfamily,language=MATLAB,breaklines=true}
+%\lstset{language=MATLAB,breaklines=true,emph={for},emphstyle=\color{blue}} 
+%\lstset{language=MATLAB,breaklines=true}
+%\lstset{% set basic listings style
+%    basicstyle=\footnotesize\ttfamily,
+%    keywordstyle=\color{black}\bfseries,%\underbar,
+%            % underlined bold black keywords
+%    identifierstyle=, % nothing happens
+%    commentstyle=\color{blue}, % white comments
+%    stringstyle=\ttfamily, % typewriter type for strings
+%    numberstyle=\tiny,
+%    language=MATLAB,
+% %   numbers=left,
+%    emptylines=1,
+%    breaklines=true,
+%    showstringspaces=true % no special string spaces
+%}
+%\lstinputlisting{MyDirectory/MyFile.m}
+
+\newcounter{example}[section]
+\newenvironment{example}[1][]{\refstepcounter{example}\par\medskip
+   \noindent \textbf{Example~\theexample. #1} \rmfamily}{\medskip}
+
+
+\textwidth 16cm
+\textheight 23cm
+\topmargin -1.5cm
+\oddsidemargin 0cm
+\parindent 0cm
+%\pagestyle{empty}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\begin{document}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\title{Writing Efficient MATLAB$^{\text{\small{\textregistered}}}$ Codes}
+\author{Reza~Sameni\footnote{Department of Biomedical Informatics, Emory University School of Medicine, GA 30322, US, Web: \texttt{www.sameni.info}, Email: \texttt{rsameni@dbmi.emory.edu}}\\
+%{\footnotesize reza.sameni@gmail.com}\\
+%{\footnotesize Sharif University of Technology, Tehran, Iran}\\
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+Revision: 5 Aug, 2020}
+%{\footnotesize Laboratoire des Images et des Signaux, Grenoble, France}\\
+%{\footnotesize Sharif University of Technology, Tehran, Iran}\\
+%{\footnotesize Email: reza.sameni@lis.inpg.fr}
+\date{}
+\maketitle
+\thispagestyle{empty}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+%\begin{abstract}
+%\noindent
+%In this article some general methods of writing more efficient MATLAB codes are presented.
+%%In this article some interesting features of MATLAB are reviewed which functions and general rules of thumb for writing efficient MATLAB codes, in terms of code size, memory use, and execution time. %The presented material is by no means exhaustive, nor the most efficient.
+%\end{abstract}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{Introduction}
+\label{sec:introduction}
+MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in Fortran. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
+
+In this short tutorial we review some of the general guidelines for writing more efficient MATLAB codes. By efficient we mean more compact code size, better memory access, and shorter execution time. Note that some of these properties are machine dependent concepts. The later presented performance benchmarks have been achieved on a 1.5GHz Centrino Notebook with 512~MBytes of RAM, and 1~MBytes of Cache memory.
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{General guidelines}
+\label{sec:general}
+General guidelines for improving MATLAB codes:
+%\flushleft
+\begin{enumerate}
+%{\setlength{\rightmargin}{.5cm}\setlength{\leftmargin}{.5cm}\setlength{\listparindent}{.5cm}}
+\item Improve the algorithm before attempting to optimize the code.
+\item Benefit from the matrix abilities of MATLAB and its built-in functions.
+\item Avoid writing the entire program in a single m-file script. One should break down a program into separate m-file functions. This also will help the reuse of functions and creating (open-source) toolboxes. 
+\item Comment the codes.
+\item MATLAB version 6.5 and later support object-oriented programming. This feature can be used to make more structured and reusable codes.
+\end{enumerate}
+
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{Some of the general features of MATLAB}
+\label{sec:features}
+%MATLAB is case-sensitive (`a' and `A' are different variables).
+MATLAB is an `interpreter' language, which can also use pre-compiled components. This is a good feature for debugging programs and software development. But at the same time it makes MATLAB rather slow (as compared to languages such as C and C++). It is therefore better to use its very efficient components-- known as built-in functions-- as much as possible, rather than using long scripts with nested for-loops and if-conditions. All the predefined MATLAB constants are in fact built-in functions. For example:
+\begin{itemize}
+\item \texttt{pi} is $4\times\arctan(1)$
+\item \texttt{i} and \texttt{j} are $\sqrt{-1}$. One can always redefine \texttt{i = sqrt(-1)} if it is overloaded by a previous m-file script.
+\item \texttt{eps(x)} and \texttt{eps(single(x))} are the positive distance from \texttt{abs(x)} to the next larger in magnitude floating point number of the same precision as \texttt{x}.
+\item \texttt{realmin} and \texttt{realmax} are machine dependent single- or double-precision positive floating point numbers.
+\item \texttt{inf} returns the IEEE arithmetic representation for positive infinity, which is also produced by operations like division by zero, e.g. 1.0/0.0, or from overflow, e.g. $\exp(1000)$. It may also be used in matrix form: \begin{lstlisting}
+	>> a = inf(2,2)
+	a =
+	   Inf   Inf
+	   Inf   Inf
+\end{lstlisting}
+\item \texttt{NaN} is the IEEE arithmetic representation for not-a-number. A NaN is obtained as a result of mathematically undefined operations like 0.0/0.0  or inf$-$inf. It may be used in matrix form as follows:
+\begin{lstlisting}
+	>> nan(3)
+	ans =
+	   NaN   NaN   NaN
+	   NaN   NaN   NaN
+	   NaN   NaN   NaN
+\end{lstlisting}
+\end{itemize}
+All of these parameters are in fact built-in functions. One can check whether a variable or function is a built-in or not as follows:
+\begin{lstlisting}
+	>> type i
+	i is a built-in function.
+\end{lstlisting}
+or:
+\begin{lstlisting}
+	>> exist('i')
+	ans =
+	     5
+\end{lstlisting}
+Built-ins may be overloaded by constants or functions. For example, \texttt{i=1} or:
+\begin{lstlisting}
+	function F= fft(x)
+	    F = x.^2
+\end{lstlisting}
+One may clear the over-loaded values to retrieve the original built-in values:
+\begin{lstlisting}
+	>> clear i j
+\end{lstlisting}
+
+It is possible to use recursive functions in MATLAB. For example, the following calculates $n!=1\times 2 \times \ldots \times n$:
+\begin{lstlisting}
+	function f = fact(i)
+	if i < 2
+	    f = 1;
+	else
+	    f = i*fact(i-1);
+	end
+\end{lstlisting}
+
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{Memory access}
+\label{sec:memory}
+MATLAB can dynamically allocate memory:
+\begin{lstlisting}
+	>> a(1,3) = 5
+	
+	a =
+	     0     0     5
+	     
+	>> a(2,4) = 6
+	
+	a =
+	     0     0     5     0
+	     0     0     0     6
+\end{lstlisting}
+However one can also pre-allocate the required memory:
+\begin{lstlisting}
+	>> a = zeros(1000,200);
+\end{lstlisting}
+which makes the codes run much faster, especially for large arrays. Let us see an example:
+\begin{lstlisting}
+	N = 50000;
+	a(1) = 1;
+	a(2) = 2;
+	t = cputime;        % tic
+	for i = 3 : N
+	    a(i) = 0.9*a(i-1) - 0.3*a(i-2);
+	end
+	dt1 = cputime - t   % toc
+	
+	clear a;
+	
+	a = zeros(1,N);
+	a(1) = 1;
+	a(2) = 2;
+	t = cputime;        % tic
+	for i = 3 : N
+	    a(i) = 0.9*a(i-1) - 0.3*a(i-2);
+	end
+	dt2 = cputime - t   % toc
+	dt1/dt2
+\end{lstlisting}
+which results in:
+\begin{lstlisting}
+	dt1 = 5.6406
+	dt2 = 0.0469
+	dt1/dt2 = 120.3333 !
+\end{lstlisting}
+In similar examples -- depending on the CPU, RAM, Cache, required memory, and the type of computation-- a code may run orders of magnitude faster when one pre-allocates the required memories. Pre-allocation may also be used for variable length vectors which have an upper-bound of required memory:
+\begin{lstlisting}
+	% Note: This code is just for memory allocation illustration, but it is
+	%  not efficient in speed. You will see the reason in later sections.
+	N = 1000;
+	a = rand(N,1);
+	b = zeros(size(a));
+	k = 0;
+	for i = 1 : N
+	   if(a(i) > 0.5)
+	      k = k + 1;
+	      b(k) = a(i);
+	   end
+	end
+	b = b(1 : k);
+\end{lstlisting}
+The downside of memory pre-allocation is when huge amounts of memory are required, which may not be allocated in a single memory block. Test the following examples (and change the loop ranges and matrix sizes depending to your system's resources):
+\begin{lstlisting}
+	>> % compare the following codes:
+	>> A = zeros(5000,10000); % can be too big to be allocated!
+	>> for i = 1 : 10000       % this one is allocated easier.
+	      B(:,i) = zeros(5000,1);
+	   end
+\end{lstlisting}
+One can use the function \texttt{pack} which performs memory garbage collection by saving the current workspace on the hard disc, clearing the workspace, and reloading the workspace from the hard disc. It is very useful for defragmentation of the memory in long-running programs that continuously allocate and clear variables. Note that it is not efficient to use \texttt{pack} so frequently, since it slows down the code. For example:
+\begin{lstlisting}
+	for i = 1 : N
+		if (mod(i,100)==0) % perform packing every 100 iterations
+			pack;
+		end
+		f(i);	% a user-defined function which fragments the memory
+	end
+\end{lstlisting}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{Speed optimization}
+\label{sec:speed}
+MATLAB is excellent in matrix calculations. So it is very important to use its matrix abilities rather than using for-loops or if-conditions, which operate on single entries of vectors and matrices.
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\subsection{Array indexing}
+There are three ways of array indexing in MATLAB:
+\begin{enumerate}
+\item \textit{Subscripted}
+\begin{lstlisting}
+	>> A = [11 14 17;...
+	        12 15 18;...
+	        13 16 19];
+	>> A(1,2)
+	
+	ans =
+	
+	    14
+	
+	>> A([1 2],2)
+	
+	ans =
+	
+	    14
+	    15
+	
+	>> A(1:3,1)'
+	
+	ans =
+	
+	    11    12    13
+	
+	>> A(1:end,2)
+	
+	ans =
+	
+	    14
+	    15
+	    16
+\end{lstlisting}
+\item \textit{Linear}
+\begin{lstlisting}
+	>> A(1)
+	
+	ans =
+	
+	    11
+	
+	>> A(4)
+	
+	ans =
+	
+	    14
+\end{lstlisting}
+MATLAB matrices are stored in column order (unlike C where matrices are stored in row order). As a result, for an $M\times N$ matrix \texttt{A}, subscript and linear indexings can be related to each other as follows:
+\begin{lstlisting}
+A(i + (j-1)*M) % which is equivalent to A(i,j)
+\end{lstlisting}
+and
+\begin{lstlisting}
+A(rem(index-1,M)+1,floor((index-1)/M)+1) % which is equivalent to A(index)
+\end{lstlisting}
+Note that by using the colon operator (\texttt{:}) one can convert a multi-dimensional matrix to a column vector (obtained by stacking its columns under one another):
+\begin{lstlisting}
+	>> A(:)
+\end{lstlisting}
+This feature can be used to, for example, change the entries of a matrix without reshaping it:
+\begin{lstlisting}
+	>> A(:) = 1;
+\end{lstlisting}
+\item \textit{Logical}
+
+\texttt{logical} is a data-type in MATLAB, which is returned by many of the comparative operators. This feature is helpful in writing compact and fast codes without using if-conditions. Let us take a look at some examples:
+\begin{lstlisting}
+	>> [4 5 3] > [1 2 6]
+	
+	ans =
+	
+	     1     1     0
+
+	>> whos
+	  Name      Size                    Bytes  Class
+	
+	  ans       1x3                         3  logical array
+	
+	Grand total is 3 elements using 3 bytes
+
+	>> A = 6 : 10;
+	>> A(logical([0 0 1 0 1]))
+	
+	ans =
+	
+	     8    10
+	
+	>> A(A > 7)
+	
+	ans =
+	
+	     8     9    10
+	
+	>> B = randn(3)
+	
+	B =
+	
+	   -0.0956   -1.3362   -0.6918
+	   -0.8323    0.7143    0.8580
+	    0.2944    1.6236    1.2540
+	    
+	>> C = rand(3)
+	
+	C =
+	
+	    0.9501    0.4860    0.4565
+	    0.2311    0.8913    0.0185
+	    0.6068    0.7621    0.8214
+	
+	>> C(B > 0)
+	
+	ans =
+	
+	    0.6068
+	    0.8913
+	    0.7621
+	    0.0185
+	    0.8214
+\end{lstlisting}
+\end{enumerate}
+The indexing features of MATLAB are useful for replicating a vector or a matrix:
+\begin{lstlisting}
+	>> A = [1 5]
+	
+	A =
+	
+	     1     5
+	
+	>> A([1 2 1])
+	
+	ans =
+	
+	     1     5     1
+	     
+	>> V = [1:5]';
+	>> V(:,ones(3,1))	% This is known as the "Tony's trick"!
+	
+	ans =
+	
+	     1     1     1
+	     2     2     2
+	     3     3     3
+	     4     4     4
+	     5     5     5
+\end{lstlisting}
+Suppose we want to make a 5$\times$5 matrix with all entries equal to 10. Try the following two ways:%\footnote{Note that MATLAB is case-sensitive (`a' and `A' are different variables).}:
+\begin{lstlisting}
+	>> A = 10*ones(5);          % first method
+	>> a = 10; A = a(ones(5));  % second method 
+\end{lstlisting}
+Another example:
+\begin{lstlisting}
+	>> a = magic(3)
+	
+	a =
+	
+	     8     1     6
+	     3     5     7
+	     4     9     2
+	
+	>> N = 2;
+	>> a(:, N(ones(1, 3)))
+	
+	ans =
+	
+	     1     1     1
+	     5     5     5
+	     9     9     9
+\end{lstlisting}
+We can use a similar approach for eliminating some of the matrix entries. For example in order to remove the NaN and Inf entries of a matrix, try the following three equivalent methods:
+\begin{lstlisting}
+	>> % first method:
+	>> i = find(isnan(x) | isinf(x));
+	>> x(i) = [];
+	>> % second method:
+	>> x(isnan(x) | isinf(x)) = [];
+	>> % third method:
+	>> x = x(~isnan(x) & ~isinf(x));
+\end{lstlisting}
+Check the helps for the following MATLAB functions: \texttt{meshgrid}, \texttt{repmat}, \texttt{reshape}, \texttt{find}, \texttt{any}, and \texttt{all}, for relqted items.
+
+By combining the array indexing features with logical data-types, many of the matrix manipulations may be done without the need of for-loops and if-conditions. 
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\subsection{Vectorized computations}
+We now use some of the noted MATLAB features in a few computational examples. We will make use of the following MATLAB functions: \texttt{zeros}, \texttt{ones}, \texttt{toeplitz}, \texttt{pascal}, and \texttt{hankel}.
+
+\begin{example}{Signal generation}
+\begin{lstlisting}
+	>> N = 5000;
+	>> fs = 500; % Hz
+	>> f0 = 3.8; % Hz
+	>> t = [0 : N-1]/fs;
+	>> x = sin(2*pi*f0*t) .* exp(-t.^2/2);
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Inner product}
+\begin{lstlisting}
+	>> a = [1 2 3];
+	>> b = [4 5 6];
+	>> a*b'        % first method
+	
+	ans =
+	
+	  32
+
+	>> sum(a.*b)   % second method
+	
+	ans =
+	
+	  32
+\end{lstlisting}
+\end{example}
+Scalars may be added, subtracted or multiplied by vectors or matrices using their corresponding operators. Vectors and matrices may also be divided by scalars in the same manner; but in order to divide a scalar by a vector or matrix, one should use the \texttt{./} operator instead of the \texttt{/} operator.
+
+When both of the operands are nonscalar (vectors or matrices), \texttt{*}, \texttt{\^}, and \texttt{/} are used for matrix operations and \texttt{.*}, \texttt{.\^}, and \texttt{./} are used for operations on the entries.
+
+\begin{example}{Clipping a signal}
+\begin{lstlisting}
+	>> x = max(x, SOME_LOWER_BOUND); % clip from the bottom
+	>> x = min(x, SOME_UPPER_BOUND); % clip from the top
+\end{lstlisting}
+\end{example}
+
+\begin{example}{subtraction of a vector from all the columns of a matrix}
+\begin{lstlisting}
+	>> a = [1 : 5]';
+	>> b = eye(5);
+	>> b - a(:,ones(5,1))
+		
+	ans =
+	
+	     0    -1    -1    -1    -1
+	    -2    -1    -2    -2    -2
+	    -3    -3    -2    -3    -3
+	    -4    -4    -4    -3    -4
+	    -5    -5    -5    -5    -4
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Multiplying vectors in matrices}
+Try the following four methods
+\begin{lstlisting}
+	>> N = 3000;
+	>> x = randn(N,1);
+	>> F = randn(N);
+	>> Y1 = x(:,ones(N,1)).*F;    % 1st in speed
+	>> Y2 = diag(sparse(x)) * F;  % 2nd in speed
+	>> Y3 = sparse(diag(x)) * F;  % 3rd in speed
+	>> Y4 = diag(x) * F;          % 4th in speed
+\end{lstlisting}
+In the above, \texttt{sparse} is a special data-type in MATLAB, which is efficient for manipulating matrices with many zero entries. Check the help for the \texttt{sparse} and \texttt{full} functions.
+\end{example}
+
+\begin{example}{Normalization of the columns of a matrix}
+\begin{lstlisting}
+	>> vmag = sqrt(sum(v.^2));
+	>> v = v./vmag(ones(1,size(v,1)),:);
+\end{lstlisting}
+\end{example}
+
+\begin{example}{First order difference}
+\begin{lstlisting}
+	>> d = sin(2*pi*[0:999]*15/1000);
+	>> df = d(1 : end-1) - d(2 : end);
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Using the built-in filter function for vectorizing recursive calculations}
+\begin{lstlisting}
+	>> L = 1000;
+	>> A = 1;
+	>> % bad coding style:
+	>> for i = 1 : L-1
+	>>    A(i+1) = 2*A(i) + 1;
+	>> end
+	>> % good coding style:
+	>>       y(i) = (tmp(N/2) + tmp(N/2+1))/2;
+	>> A = filter(1,[1 -2],ones(1,L));
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Zero-order holding of uniformly sampled data}
+\begin{lstlisting}
+	>> N = 4;
+	>> x = [1 5 3];
+	>> x = upsample(x,N); % x = [1 0 0 0 5 0 0 0 3 0 0 0];
+	>> x = filter(ones(N,1),1,x);
+	x =
+	
+	     1   1   1   1   5   5   5   5   3   3   3   3
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Zero-order holding of non-uniformly sampled data}
+\begin{lstlisting}
+	>> a = 1; b = 5; c = 3;
+	>> x = [a 0 0 0 b 0 0 c 0 0 0 0]; % => y = [a a a a b b b c c c c c];
+	>> validin = find(x);
+	>> x(validin(2 : end)) = diff(x(validin));
+	>> x = cumsum(x)
+	x =
+	
+	     1   1   1   1   5   5   5   3   3   3   3   3
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Median filter of order N}
+\begin{lstlisting}
+	>> x = randn(1000,1);
+	>> N = 20;
+	>> y = x;
+	>> if(mod(N,2)==1) % Odd length median filter
+	>>    for i = (N+1)/2 : length(x)-(N-1)/2
+	>>       tmp = sort(x(i-(N-1)/2 : i+(N-1)/2));
+	>>       y(i) = tmp((N+1)/2);
+	>>    end
+	>> else % Even length median filter
+	>>    for i = N/2 : length(x)-N/2
+	>>       tmp = sort(x(i-N/2+1 : i+N/2));
+	>>    end
+	>> end
+\end{lstlisting}
+\end{example}
+
+\begin{example}{Moving average filter of order N}
+\begin{lstlisting}
+	>> % first method
+	>> x = randn(1000,1);
+	>> N = 20;
+	>> y = filter(ones(N,1)/N,1,x);
+	>> % second method
+	>> y = cumsum(x)/N;
+	>> y(N+1 : end) = y(N+1 : end) - y(1 : end-N);
+\end{lstlisting}
+The second method in this example has used the following property of moving average filters:
+\begin{equation}
+\label{eq:CIC1}
+H(z) = 1+z^{-1}+z^{-2}+\ldots+z^{-N+1}=\frac{1-z^{-N}}{1-z^{-1}}
+\end{equation}
+The last fraction in this equation is known as the \textit{cascaded integrator comb (CIC)} filter, which is a very practical filter for DSP and FPGA implementation of down-converters and up-converters in telecommunications systems. Its efficiency is due to the fact that it only needs summations and subtractions for its implementation, which are more economic than multipliers, and a memory for keeping the last $N$ input samples.
+
+Although the frequency response of (\ref{eq:CIC1}) is a $\text{Sinc}(\cdot)$ function with N lobes and an attenuation of about 13~dB in its first side-lobe (which is rather poor for a lowpass filter), by cascading several stages of such filters, better performance is achieved:
+\begin{equation}
+\label{eq:CIC2}
+H(z) = \Big(\frac{1-z^{-N}}{1-z^{-1}}\Big)^R
+\end{equation}
+Such filters are usually followed by a down-sample of order $N$. A similar filter is also used for up-conversion of signals in transmitters.
+\end{example}
+
+\begin{example}{Calculation of two-dimensional functions}
+
+Consider the two-dimensional function $F(x,y)=xe^{-x^2-y^2}$. It can be calculated efficiently as follows:
+\begin{lstlisting}
+	>> x = (-2 : 2); % arbitrary initial values
+	>> y = (-1.5 : .5 : 1.5); % arbitrary initial values
+	>> % first method. Not efficient!
+	>> F = zeros(length(x),length(y));
+	>> for i = 1:length(x),
+	>>    for j = 1:length(y),
+	>>       F(i,j) = x(i)*exp(-x(i)^2-y(j)^2);
+	>>    end
+	>> end
+	>> % second method. Better!
+	>> [X Y] = meshgrid(x,y);
+	>> F = X.*exp(-X.^2-Y.^2);
+\end{lstlisting}
+In this example we can also use the fact that $F$ is a separable function of $x$ and $y$, to further simplify the calculations. Using $F(x,y)=\big(xe^{-x^2}\big)e^{-y^2}$ we can write
+\begin{lstlisting}
+	>> F = (x .* exp(-x.^2))' * exp(-y.^2); % Efficient!
+\end{lstlisting}
+\end{example}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\subsection{Profiling the program speed}
+We can use the \texttt{tic} and \texttt{toc} functions or the \texttt{cputime} function to find the exact execution time of a codes:
+\begin{lstlisting}
+	>> tic % start timer
+	>> 	  procedure1; % the procedure
+	>> toc % stop timer
+	>> % Or
+	>> t = cputime;
+	>> 	  procedure2; % the procedure
+	>> dt = cputime - t
+\end{lstlisting}
+For more detailed information on a code (including all the functions and its sub-functions), the \texttt{profile} function can be used, which gives a complete report of the program timing. This information can help one find the bottlenecks of the code and write them more efficiently or even implement them using MEX-functions, which are explained in the next section. All we need to do for profiling a program is:
+\begin{lstlisting}
+	>> profile on
+	>> 	  procedure; % a function or m-file which you want to profile
+	>> profile off
+	>> profile viewer
+\end{lstlisting}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\section{Linking MATLAB with external components}
+We can run OS commands directly from the MATLAB command line:
+\begin{lstlisting}
+	>> ! dir
+	>> ! autoexec.bat
+\end{lstlisting}
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\subsubsection{Calling MATLAB routines from C or FORTRAN}
+MATLAB functions can be executed from a C or FORTRAN program. This is done by the MATLAB Engine library, which may be called from other programs. The corresponding examples can be found in the \texttt{<MATLAB>$\backslash$extern$\backslash$} directory. In summary one needs to transfer data between MATLAB and C (or FORTRAN) and to be able to execute the MATLAB functions. The MATLAB Engine has several different routines for data transfer and function calls from C (or FORTRAN).
+
+MATLAB functions may also be converted to stand-alone programs or dynamically linked libraries (DLLs). One can use the MATLAB COM Builder (\texttt{comtool}) for this purpose. Take a look at MATLAB's documents for further details. You can also design a graphical interface for your codes using the \texttt{guide} tool.
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+\subsubsection{Calling C routines from MATLAB}
+By now we have presented some general guidelines for optimizing MATLAB codes. Now suppose that we have already performed all the possible optimizations, but the program is still slow, which is common in time-consuming simulations or in real-time applications. A solution that can speed-up a program up to an order of ten times, is to rewrite the bottlenecks of the codes in C. This can be done in MATLAB by using MEX-files, which stand for MATLAB Executables.
+
+There is of course another reason for using MEX-files. We might already have many efficient codes written in C or FORTRAN that we do not want to rewrite in MATLAB. All we have to do is to make a MEX-file interface of the source codes and call them from MATLAB.
+
+Of course, we should note that MEX-files should not be overused, because MATLAB is a high-level programming environment for rapid system design and prototyping and one should ideally avoid going into low-level implementation details.
+
+MEX-files are in fact DLLs made of C/C++ or FORTRAN codes, which can be executed by MATLAB. Every C MEX-file consists of the four following elements:
+\begin{enumerate}
+\item \texttt{\#include "mex.h"}
+\item \texttt{mexFunction}
+\item \texttt{mxArray}
+\item API functions
+\end{enumerate}
+The \texttt{mexFunction} is the gateway to the DLL, which is called by MATLAB. In C, \texttt{mexFunction} always has the following form:
+\begin{lstlisting}
+void mexFunction(int nlhs, mxArray *plhs[],int nrhs, const mxArray *prhs[]);
+\end{lstlisting}
+where \texttt{nlhs} and \texttt{nrhs} are the number of outputs and inputs to the function, respectively. These two integers are equivalent with the \texttt{nargout} and \texttt{nargin} built-ins in MATLAB functions. \texttt{plhs} and \texttt{prhs} are arrays of pointers to \texttt{mxArray}.
+
+\texttt{mxArray} is a structure representing MATLAB arrays in C. All data-types are an \texttt{mxArray} structure, containing the MATLAB variable name, its dimensions, its data-type, and whether it is a real variable or a complex one. The real and imaginary parts may be accessed by the \texttt{.pr} and \texttt{.pi} fields.
+
+There are several functions in the mex library for sending, receiving, and processing \texttt{mxArray} data. MEX-files also have the ability of loading variables directly from the caller function or the base workspace of MATLAB. Note that MATLAB functions may also be directly called from MEX-files:
+\begin{lstlisting}
+mexCallMATLAB(nlhs,plhs,nrhs,prhs,"MATLAB Function Name");
+\end{lstlisting}
+This will however reduce the speed efficiency of MEX-files due to the overhead of calling MATLAB routines and the required data transfer.
+
+The stages of generating MEX-file DLLs from an existing MEX-file is as follows:
+\begin{enumerate}
+\item C compiler selection by running \texttt{mex -setup}. MEX-files may be compiled using any C compiler. %%An ANSI C compiler called \texttt{lcc} is included with the MATLAB package; but this compiler can not compile C++ codes.
+\item MEX-file DLL generation, by calling the mex command as follows:
+\begin{lstlisting}
+	>> mex example.c
+	>> % or
+	>> mex example.c objfile.obj ex1.c libfile.lib
+\end{lstlisting}
+As you see, the \texttt{mex} command can also take multiple C-files and pre-compiled objects and libraries.
+\item calling the MEX-file from MATLAB:
+\begin{lstlisting}
+	>> example([1 2],1:10);
+\end{lstlisting}
+\end{enumerate}
+
+If you are using Visual Studio or similar packages, you can use the \texttt{dumpbin.exe} program to check the contents of the DLLs produced by MATLAB.
+%/////////////////////////////////////////////////////////////////////////////////////////////////////////
+%\bibliographystyle{IEEEtran.bst}
+\vfill
+\begin{thebibliography}{1}
+
+\bibitem{Mathworks0}
+\emph{Documentation for MathWorks Products R2020a}. [Online]. Available: \url{https://www.mathworks.com/help/}, Aug 2020.
+
+\bibitem{Eyre98}
+D.~Eyre, \emph{MATLAB Basics and a Little Beyond}. [Online]. Available: \url{https://www.math.utah.edu/~eyre/computing/matlab-intro}, 1998.
+
+%\bibitem{Stark98}
+%C.~Stark, \emph{MATLAB Summary}. [Online]. Available: \url{http://www.math.ufl.edu/help/matlab-tutorial/matlab-tutorial.html}, 1997.
+
+\bibitem{Etter2002}
+Etter, Delores Maria, David C. Kuncicky, and Douglas W. Hull, \emph{Introduction to MATLAB}, Prentice Hall, 2002.
+
+%\bibitem{Getreuer06}
+%P.~Getreuer, \emph{Writing Fast MATLAB Code}. [Online]. Available: \url{http://www.math.ucla.edu/~getreuer/matopt.pdf}, June 2006.
+\bibitem{Getreuer20} Pascal Getreuer (2020). \emph{Writing Fast MATLAB Code}, \url{https://www.mathworks.com/matlabcentral/fileexchange/5685-writing-fast-matlab-code}, MATLAB Central File Exchange. Retrieved August 6, 2020.
+
+\bibitem{Acklam03}
+P.J.~Acklam, \emph{MATLAB array manipulation tips and tricks}. [Online]. Available: \url{https://www.coursehero.com/file/14588631/MATLAB-array-manipulation-tips-and-tricks/}, October 2003.
+
+\bibitem{Gilbert91}
+J.R.~Gilbert, C.~Moler, and R.~Schreiber, \emph{Sparse Matrices in MATLAB: Design and Implementation}. [Online]. Available: \url{https://doi.org/10.1137/0613024}, October 1991.
+
+\bibitem{Mathworks1}
+\emph{Techniques to Improve Performance}. The Mathworks support center [Online]. Available: \url{http://www.mathworks.com/support/tech-notes/1100/1109.html}.
+
+\bibitem{Shah}
+B.~Shah, \emph{A Tutorial to Call MATLAB Functions from Within A  C/C++ Program}. [Online]. Available: \url{https://www.scribd.com/document/76938035/A-Tutorial-to-Call-MATLAB-Functions-From-Within-a-C-C-Program}.
+
+\bibitem{Mathworks2}
+\emph{External Language Interfaces}. The Mathworks support center [Online]. Available: \url{http://www.mathworks.com/support/tech-notes/1600/1605.html}.
+
+\end{thebibliography}
+
+\end{document}
