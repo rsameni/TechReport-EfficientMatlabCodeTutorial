@@ -20,6 +20,11 @@
 \usepackage{amsmath}
 %\usepackage{array}
 \usepackage{color}
+
+
+
+
+
 \usepackage{url}
 %\usepackage{hyperref}
 
@@ -45,6 +50,41 @@
 %    showstringspaces=true % no special string spaces
 %}
 %\lstinputlisting{MyDirectory/MyFile.m}
+
+\definecolor{myyellow}{rgb}{1,1,0.95}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  backgroundcolor=\color{myyellow},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  %basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1,                % start line enumeration with line 1000
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Matlab,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=none,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{myyellow},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
 
 \newcounter{example}[section]
 \newenvironment{example}[1][]{\refstepcounter{example}\par\medskip
@@ -83,7 +123,7 @@ Revision: 5 Aug, 2020}
 \label{sec:introduction}
 MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in FORTRAN. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
 
-In this short tutorial we review some of the general guidelines for writing more efficient MATLAB codes. By efficient we mean more compact code size, better memory access, and shorter execution time. Note that some of these properties are machine dependent concepts. The later presented performance benchmarks have been achieved on a 1.5~GHz Centrino Notebook with 512~MBytes of RAM, and 1~MBytes of Cache memory.
+In this short tutorial we review some of the general guidelines for writing more efficient MATLAB codes. By efficient we mean more compact code size, better memory access, and shorter execution time. Note that some of these properties are machine dependent concepts. The later presented performance benchmarks have been achieved on a 2.3~GHz Quad-Core Intel Core i7 Macbook Pro, with 32~GB of RAM, and 8~MB of L3 Cache memory.
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 \section{General guidelines}
 \label{sec:general}
@@ -175,35 +215,18 @@ However one can also pre-allocate the required memory:
 	>> a = zeros(1000,200);
 \end{lstlisting}
 which makes the codes run much faster, especially for large arrays. Let us see an example:
+
+\lstinputlisting[language=Matlab, caption= \lstname]{samplecodes/samplecodes.m}
+
+running this code on our benchmark system resulted in:
 \begin{lstlisting}
-	N = 50000;
-	a(1) = 1;
-	a(2) = 2;
-	t = cputime;        % tic
-	for i = 3 : N
-	    a(i) = 0.9*a(i-1) - 0.3*a(i-2);
-	end
-	dt1 = cputime - t   % toc
-	
-	clear a;
-	
-	a = zeros(1,N);
-	a(1) = 1;
-	a(2) = 2;
-	t = cputime;        % tic
-	for i = 3 : N
-	    a(i) = 0.9*a(i-1) - 0.3*a(i-2);
-	end
-	dt2 = cputime - t   % toc
-	dt1/dt2
+dt1_mn = 0.1402
+dt1_std = 0.0183
+dt2_mn = 0.0697
+dt2_std = 0.0070
+ratio_mn = 2.0509
 \end{lstlisting}
-which results in:
-\begin{lstlisting}
-	dt1 = 5.6406
-	dt2 = 0.0469
-	dt1/dt2 = 120.3333 !
-\end{lstlisting}
-In similar examples -- depending on the CPU, RAM, Cache, required memory, and the type of computation-- a code may run orders of magnitude faster when one pre-allocates the required memories. Pre-allocation may also be used for variable length vectors which have an upper-bound of required memory:
+which shows that the code with preallocation has been twice as fast on average (the ratio can vary from one system to another). In similar examples -- depending on the CPU, RAM, Cache, required memory, and the type of computation-- a code may run orders of magnitude faster when one pre-allocates the required memories. Pre-allocation may also be used for variable length vectors which have an upper-bound of required memory:
 \begin{lstlisting}
 	% Note: This code is just for memory allocation illustration, but it is
 	%  not efficient in speed. You will see the reason in later sections.
