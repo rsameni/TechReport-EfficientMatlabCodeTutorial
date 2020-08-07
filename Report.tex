@@ -81,7 +81,7 @@ Revision: 5 Aug, 2020}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 \section{Introduction}
 \label{sec:introduction}
-MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in Fortran. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
+MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in FORTRAN. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
 
 In this short tutorial we review some of the general guidelines for writing more efficient MATLAB codes. By efficient we mean more compact code size, better memory access, and shorter execution time. Note that some of these properties are machine dependent concepts. The later presented performance benchmarks have been achieved on a 1.5~GHz Centrino Notebook with 512~MBytes of RAM, and 1~MBytes of Cache memory.
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -642,19 +642,19 @@ We can run OS commands directly from the MATLAB command line:
 	>> ! autoexec.bat
 \end{lstlisting}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
-\subsubsection{Calling MATLAB routines from C or FORTRAN}
-MATLAB functions can be executed from a C or FORTRAN program. This is done by the MATLAB Engine library, which may be called from other programs. The corresponding examples can be found in the \texttt{<MATLAB>$\backslash$extern$\backslash$} directory. In summary one needs to transfer data between MATLAB and C (or FORTRAN) and to be able to execute the MATLAB functions. The MATLAB Engine has several different routines for data transfer and function calls from C (or FORTRAN).
+\subsubsection{Calling MATLAB routines from C/C++}
+MATLAB functions can be executed from a C/C++ program. This is done by the MATLAB Engine library, which may be called from other programs. The corresponding examples can be found in the \texttt{<MATLAB>$\backslash$extern$\backslash$} directory. In summary one needs to transfer data between MATLAB and C/C++ and to be able to execute the MATLAB functions. The MATLAB Engine has several different routines for data transfer and function calls from C/C++.
 
 MATLAB functions may also be converted to stand-alone programs or dynamically linked libraries (DLLs). One can use the MATLAB COM Builder (\texttt{comtool}) for this purpose. Take a look at MATLAB's documents for further details. You can also design a graphical interface for your codes using the \texttt{guide} tool.
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 \subsubsection{Calling C routines from MATLAB}
 By now we have presented some general guidelines for optimizing MATLAB codes. Now suppose that we have already performed all the possible optimizations, but the program is still slow, which is common in time-consuming simulations or in real-time applications. A solution that can speed-up a program up to an order of ten times, is to rewrite the bottlenecks of the codes in C. This can be done in MATLAB by using MEX-files, which stand for MATLAB Executables.
 
-There is of course another reason for using MEX-files. We might already have many efficient codes written in C or FORTRAN that we do not want to rewrite in MATLAB. All we have to do is to make a MEX-file interface of the source codes and call them from MATLAB.
+There is of course another reason for using MEX-files. We might already have many efficient codes written in C/C++ that we do not want to rewrite in MATLAB. All we have to do is to make a MEX-file interface of the source codes and call them from MATLAB.
 
 Of course, we should note that MEX-files should not be overused, because MATLAB is a high-level programming environment for rapid system design and prototyping and one should ideally avoid going into low-level implementation details.
 
-MEX-files are in fact DLLs made of C/C++ or FORTRAN codes, which can be executed by MATLAB. Every C MEX-file consists of the four following elements:
+MEX-files are in fact DLLs made of C/C++, which can be executed by MATLAB. Every C MEX-file consists of the four following elements:
 \begin{enumerate}
 \item \texttt{\#include "mex.h"}
 \item \texttt{mexFunction}
