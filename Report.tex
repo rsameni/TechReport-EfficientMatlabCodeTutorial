@@ -2,60 +2,22 @@
 \documentclass[10pt,a4paper]{article}
 %\twocolumn
 %//////////////////////////////////////////////////////////////////////
-\textwidth 18cm
+\textwidth 16cm
 \textheight 23cm
 \topmargin -1.5cm
 \oddsidemargin 0cm
-\evensidemargin 0cm
+\parindent 0cm
 %//////////////////////////////////////////////////////////////////////
-
-
-%\hyphenpenalty=750
-%% If we didn't adjust the interword spacing, 2200 might be better.
-%% The TeX default is 1000
-%\hbadness=1350
-%\hyphenation
-
 %\usepackage[pdftex]{graphicx}
 \usepackage{amsmath}
-%\usepackage{array}
 \usepackage{color}
-
-
-
-
-
 \usepackage{url}
-%\usepackage{hyperref}
-
 \usepackage[final]{mcode} 
-
-%\usepackage{listings} 
-%\lstloadlanguages{MATLAB} 
-%\lstset{basicstyle=\footnotesize\ttfamily,language=MATLAB,breaklines=true}
-%\lstset{language=MATLAB,breaklines=true,emph={for},emphstyle=\color{blue}} 
-%\lstset{language=MATLAB,breaklines=true}
-%\lstset{% set basic listings style
-%    basicstyle=\footnotesize\ttfamily,
-%    keywordstyle=\color{black}\bfseries,%\underbar,
-%            % underlined bold black keywords
-%    identifierstyle=, % nothing happens
-%    commentstyle=\color{blue}, % white comments
-%    stringstyle=\ttfamily, % typewriter type for strings
-%    numberstyle=\tiny,
-%    language=MATLAB,
-% %   numbers=left,
-%    emptylines=1,
-%    breaklines=true,
-%    showstringspaces=true % no special string spaces
-%}
-%\lstinputlisting{MyDirectory/MyFile.m}
 
 \definecolor{myyellow}{rgb}{1,1,0.95}
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
 \definecolor{mymauve}{rgb}{0.58,0,0.82}
-
 \lstset{ 
   backgroundcolor=\color{myyellow},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
   %basicstyle=\footnotesize,        % the size of the fonts that are used for the code
@@ -85,22 +47,15 @@
   title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
 }
 
-
 \newcounter{example}[section]
 \newenvironment{example}[1][]{\refstepcounter{example}\par\medskip
    \noindent \textbf{Example~\theexample. #1} \rmfamily}{\medskip}
 
-
-\textwidth 16cm
-\textheight 23cm
-\topmargin -1.5cm
-\oddsidemargin 0cm
-\parindent 0cm
 %\pagestyle{empty}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 \begin{document}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
-\title{Writing Efficient MATLAB$^{\text{\small{\textregistered}}}$ Codes}
+\title{Guidelines for writing efficient MATLAB$^{\text{\small{\textregistered}}}$ codes}
 \author{Reza~Sameni\footnote{Department of Biomedical Informatics, Emory University School of Medicine, GA 30322, US, Web: \texttt{www.sameni.info}, Email: \texttt{rsameni@dbmi.emory.edu}}\\
 %{\footnotesize reza.sameni@gmail.com}\\
 %{\footnotesize Sharif University of Technology, Tehran, Iran}\\
@@ -113,15 +68,13 @@ Revision: 5 Aug, 2020}
 \maketitle
 \thispagestyle{empty}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
-%\begin{abstract}
-%\noindent
-%In this article some general methods of writing more efficient MATLAB codes are presented.
-%%In this article some interesting features of MATLAB are reviewed which functions and general rules of thumb for writing efficient MATLAB codes, in terms of code size, memory use, and execution time. %The presented material is by no means exhaustive, nor the most efficient.
-%\end{abstract}
+\begin{abstract}
+In this tutorial some of the general methods of writing more efficient MATLAB codes are reviewed. It is assumed the reader is already familiar with the syntax and environment of MATLAB.
+\end{abstract}
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
 \section{Introduction}
 \label{sec:introduction}
-MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in FORTRAN. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
+MATLAB\footnote{MATLAB stands for `Matrix Laboratory'.} is one of the most practical software used for numerical calculations, signal processing and machine learning. It is a programming environment and language, which has been optimized for matrix computations. The computational core of MATLAB is the LAPACK and BLAS libraries which were originally written for matrix calculations in FORTRAN. The first versions of MATLAB were just an interface to these libraries. However, it soon evolved into a programming language with many functions and toolboxes for various applications.
 
 In this short tutorial we review some of the general guidelines for writing more efficient MATLAB codes. By efficient we mean more compact code size, better memory access, and shorter execution time. Note that some of these properties are machine dependent concepts. The later presented performance benchmarks have been achieved on a 2.3~GHz Quad-Core Intel Core i7 Macbook Pro, with 32~GB of RAM, and 8~MB of L3 Cache memory.
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -242,14 +195,19 @@ which shows that the code with preallocation has been twice as fast on average (
 	end
 	b = b(1 : k);
 \end{lstlisting}
-The downside of memory pre-allocation is when huge amounts of memory are required, which may not be allocated in a single memory block. Test the following examples (and change the loop ranges and matrix sizes depending to your system's resources):
-\begin{lstlisting}
-	>> % compare the following codes:
-	>> A = zeros(5000,10000); % can be too big to be allocated!
-	>> for i = 1 : 10000       % this one is allocated easier.
-	      B(:,i) = zeros(5000,1);
-	   end
-\end{lstlisting}
+The downside of memory pre-allocation is when huge amounts of memory are required, which may not be allocated in a single memory block. Check Matlab documents, the array size limit or preference panel of your MATLAB installation for more information.
+
+%Test the following examples (and change the loop ranges and matrix sizes depending to your system's resources):
+%\begin{lstlisting}
+%	>> % compare the following codes:
+%	>> A = zeros(50000,100000);
+%    Error using zeros Requested 50000x100000 (37.3GB) array exceeds maximum array size preference.
+%    Creation of arrays greater than this limit may take a long time and cause MATLAB to become unresponsive. See array size limit or preference panel for more information.
+%    
+%	>> for i = 1 : 100000 % this one works
+%	      B(:,i) = zeros(50000,1);
+%	   end
+%\end{lstlisting}
 One can use the function \texttt{pack} which performs memory garbage collection by saving the current workspace on the hard disc, clearing the workspace, and reloading the workspace from the hard disc. It is very useful for defragmentation of the memory in long-running programs that continuously allocate and clear variables. Note that it is not efficient to use \texttt{pack} so frequently, since it slows down the code. For example:
 \begin{lstlisting}
 	for i = 1 : N
