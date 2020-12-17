@@ -3,7 +3,7 @@ clear;
 clc
 
 N = 1000000; % The vector lengths
-ITR = 100; % The number of runs
+ITR = 1000; % The number of runs
 
 dt1 = zeros(1, ITR); % Holds the execution time of each run (without preallocation)
 dt2 = zeros(1, ITR); % Holds the execution time of each run (with preallocation)

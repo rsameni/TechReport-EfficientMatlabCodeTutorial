@@ -9,6 +9,8 @@
 \parindent 0cm
 %//////////////////////////////////////////////////////////////////////
 %\usepackage[pdftex]{graphicx}
+\usepackage{natbib}
+\usepackage{bibentry}
 \usepackage{amsmath}
 \usepackage{color}
 \usepackage{url}
@@ -60,7 +62,7 @@
 %{\footnotesize reza.sameni@gmail.com}\\
 %{\footnotesize Sharif University of Technology, Tehran, Iran}\\
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
-Revision: 5 Aug, 2020}
+Revision: 6 Aug, 2020}
 %{\footnotesize Laboratoire des Images et des Signaux, Grenoble, France}\\
 %{\footnotesize Sharif University of Technology, Tehran, Iran}\\
 %{\footnotesize Email: reza.sameni@lis.inpg.fr}
@@ -81,7 +83,6 @@ In this short tutorial we review some of the general guidelines for writing more
 \section{General guidelines}
 \label{sec:general}
 General guidelines for improving MATLAB codes:
-%\flushleft
 \begin{enumerate}
 %{\setlength{\rightmargin}{.5cm}\setlength{\leftmargin}{.5cm}\setlength{\listparindent}{.5cm}}
 \item Improve the algorithm before attempting to optimize the code.
@@ -672,43 +673,11 @@ As you see, the \texttt{mex} command can also take multiple C-files and pre-comp
 \end{lstlisting}
 \end{enumerate}
 
-If you are using Visual Studio or similar packages, you can use the \texttt{dumpbin.exe} program to check the contents of the DLLs produced by MATLAB.
+If you are using Visual Studio or similar packages, you can use the \texttt{dumpbin.exe} program to check the contents of the DLLs produced by MATLAB. An examples of sliding median filters and trimmed mean filters implemented in C and converted into a MATLAB MEX file can be found in the open-source electrophysiological toolbox (OSET) \citep{OSET3.14}.
 %/////////////////////////////////////////////////////////////////////////////////////////////////////////
-%\bibliographystyle{IEEEtran.bst}
-\vfill
-\begin{thebibliography}{1}
-
-\bibitem{Mathworks0}
-\emph{Documentation for MathWorks Products R2020a}. [Online]. Available: \url{https://www.mathworks.com/help/}, Aug 2020.
-
-\bibitem{Eyre98}
-D.~Eyre, \emph{MATLAB Basics and a Little Beyond}. [Online]. Available: \url{https://www.math.utah.edu/~eyre/computing/matlab-intro}, 1998.
-
-%\bibitem{Stark98}
-%C.~Stark, \emph{MATLAB Summary}. [Online]. Available: \url{http://www.math.ufl.edu/help/matlab-tutorial/matlab-tutorial.html}, 1997.
-
-\bibitem{Etter2002}
-Etter, Delores Maria, David C. Kuncicky, and Douglas W. Hull, \emph{Introduction to MATLAB}, Prentice Hall, 2002.
-
-%\bibitem{Getreuer06}
-%P.~Getreuer, \emph{Writing Fast MATLAB Code}. [Online]. Available: \url{http://www.math.ucla.edu/~getreuer/matopt.pdf}, June 2006.
-\bibitem{Getreuer20} Pascal Getreuer (2020). \emph{Writing Fast MATLAB Code}, \url{https://www.mathworks.com/matlabcentral/fileexchange/5685-writing-fast-matlab-code}, MATLAB Central File Exchange. Retrieved August 6, 2020.
-
-\bibitem{Acklam03}
-P.J.~Acklam, \emph{MATLAB array manipulation tips and tricks}. [Online]. Available: \url{https://www.coursehero.com/file/14588631/MATLAB-array-manipulation-tips-and-tricks/}, October 2003.
-
-\bibitem{Gilbert91}
-J.R.~Gilbert, C.~Moler, and R.~Schreiber, \emph{Sparse Matrices in MATLAB: Design and Implementation}. [Online]. Available: \url{https://doi.org/10.1137/0613024}, October 1991.
-
-\bibitem{Mathworks1}
-\emph{Techniques to Improve Performance}. The Mathworks support center [Online]. Available: \url{http://www.mathworks.com/support/tech-notes/1100/1109.html}.
-
-\bibitem{Shah}
-B.~Shah, \emph{A Tutorial to Call MATLAB Functions from Within A  C/C++ Program}. [Online]. Available: \url{https://www.scribd.com/document/76938035/A-Tutorial-to-Call-MATLAB-Functions-From-Within-a-C-C-Program}.
-
-\bibitem{Mathworks2}
-\emph{External Language Interfaces}. The Mathworks support center [Online]. Available: \url{http://www.mathworks.com/support/tech-notes/1600/1605.html}.
-
-\end{thebibliography}
+\flushleft
+\bibliographystyle{abbrvnat}
+\bibliography{bibliography}
+\nocite{*}
 
 \end{document}
